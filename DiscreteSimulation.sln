@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscreteSimulation.GUI", "D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscreteSimulation.Core", "DiscreteSimulation.Core\DiscreteSimulation.Core.csproj", "{133B5446-F101-4AC7-BCEA-36460696A645}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscreteSimulation.Console", "DiscreteSimulation.Console\DiscreteSimulation.Console.csproj", "{933D6A70-0320-404C-8A99-46954F69A514}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{133B5446-F101-4AC7-BCEA-36460696A645}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{133B5446-F101-4AC7-BCEA-36460696A645}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{133B5446-F101-4AC7-BCEA-36460696A645}.Release|Any CPU.Build.0 = Release|Any CPU
+		{933D6A70-0320-404C-8A99-46954F69A514}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{933D6A70-0320-404C-8A99-46954F69A514}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{933D6A70-0320-404C-8A99-46954F69A514}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{933D6A70-0320-404C-8A99-46954F69A514}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
