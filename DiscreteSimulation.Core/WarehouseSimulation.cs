@@ -64,9 +64,17 @@ public class WarehouseSimulation : MonteCarloSimulationCore
         {
             _deliverComponentsBySelectedStrategy = StrategyD;
         }
-        else if (SelectedStrategy == "Custom")
+        else if (SelectedStrategy == "Custom1")
         {
-            _deliverComponentsBySelectedStrategy = CustomStrategy;
+            _deliverComponentsBySelectedStrategy = CustomStrategy1;
+        }
+        else if (SelectedStrategy == "Custom2")
+        {
+            _deliverComponentsBySelectedStrategy = CustomStrategy2;
+        }
+        else if (SelectedStrategy == "Custom3")
+        {
+            _deliverComponentsBySelectedStrategy = CustomStrategy3;
         }
         else
         {
@@ -115,6 +123,8 @@ public class WarehouseSimulation : MonteCarloSimulationCore
         _decisionOnDeliveryGenerator = new ContinuousUniformGenerator(0, 100, SeedGenerator.Next());
     }
 
+    public event Action<int, double, double>? NewDailyCosts;
+
     public override void ExecuteReplication()
     {
         var availableComponents = new int[3];
@@ -129,21 +139,35 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             availableComponents[2] += _deliveredComponents[2];
             
             // Náklady na súčiastky v dňoch pondelok až štvrtok
-            costs += 0.2 * 4 * availableComponents[0];
-            costs += 0.3 * 4 * availableComponents[1];
-            costs += 0.25 * 4 * availableComponents[2];
+            if (CurrentMaxReplications == 1)
+            {
+                for (int day = 1; day <= 4; day++)
+                {
+                    var dailyCosts = 0.2 * availableComponents[0] + 0.3 * availableComponents[1] + 0.25 * availableComponents[2];
+                    
+                    costs += dailyCosts;
+                
+                    NewDailyCosts?.Invoke((week - 1) * 7 + day, dailyCosts, costs);
+                }
+            }
+            else
+            {
+                costs += 0.2 * 4 * availableComponents[0];
+                costs += 0.3 * 4 * availableComponents[1];
+                costs += 0.25 * 4 * availableComponents[2];
+            }
 
-            // TODO: Horna hranica U_max = 100 je vratane 100 alebo menej ako 100?
             var requiredCountOfTlmice = _requiredCountOfTlmiceGenerator.Next();
-            // TODO: Rovnaka otazka
             var requiredCountOfBrzdoveDosticky = _requiredCountOfBrzdoveDostickyGenerator.Next();
             var requiredCountOfSvetlomety = _requiredCountOfSvetlometyGenerator.Next();
+            
+            var penalty = 0.0;
             
             availableComponents[0] -= requiredCountOfTlmice;
             
             if (availableComponents[0] < 0)
             {
-                costs += 0.3 * 4 * -availableComponents[0];
+                penalty += 0.3 * -availableComponents[0];
                 availableComponents[0] = 0;
             }
             
@@ -151,7 +175,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             
             if (availableComponents[1] < 0)
             {
-                costs += 0.3 * 4 * -availableComponents[1];
+                penalty += 0.3 * -availableComponents[1];
                 availableComponents[1] = 0;
             }
             
@@ -159,14 +183,35 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             
             if (availableComponents[2] < 0)
             {
-                costs += 0.3 * 4 * -availableComponents[2];
+                penalty += 0.3 * -availableComponents[2];
                 availableComponents[2] = 0;
             }
             
-            // Náklady na súčiastky v piatok až nedeľu
-            costs += 0.2 * 3 * availableComponents[0];
-            costs += 0.3 * 3 * availableComponents[1];
-            costs += 0.25 * 3 * availableComponents[2];
+            // Náklady na súčiastky v piatok až nedeľu (vratane pokuty v piatok)
+            if (CurrentMaxReplications == 1)
+            {
+                for (int day = 5; day <= 7; day++)
+                {
+                    var dailyCosts = 0.2 * availableComponents[0] + 0.3 * availableComponents[1] + 0.25 * availableComponents[2];
+                    
+                    if (day == 5)
+                    {
+                        dailyCosts += penalty;
+                    }
+                    
+                    costs += dailyCosts;
+                    
+                    NewDailyCosts?.Invoke((week - 1) * 7 + day, dailyCosts, costs);
+                }
+            }
+            else
+            {
+                costs += penalty;
+                
+                costs += 0.2 * 3 * availableComponents[0];
+                costs += 0.3 * 3 * availableComponents[1];
+                costs += 0.25 * 3 * availableComponents[2];
+            }
         }
         
         _replicationsCostsSum += costs;
@@ -258,9 +303,9 @@ public class WarehouseSimulation : MonteCarloSimulationCore
         }
     }
     
-    // Vlastná stratégia: Objednavame iba od dodavatela 1, ale mnozstvo objednaneho tovaru
+    // Vlastná stratégia 1: Objednavame iba od dodavatela 1, ale mnozstvo objednaneho tovaru
     // je zmenené na stredné hodnoty jednotlivych distribucii odoberaneho tovaru
-    private void CustomStrategy(int week)
+    private void CustomStrategy1(int week)
     {
         double probabilityOfDelivery;
             
@@ -287,5 +332,44 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             _deliveredComponents[1] = 0;
             _deliveredComponents[2] = 0;
         }
+    }
+    
+    // Vlastná stratégia 2: Objednavame iba od dodavatela 1, ale mnozstvo objednaneho tovaru
+    // je zmenené na stredné hodnoty - 10% jednotlivych distribucii odoberaneho tovaru
+    private void CustomStrategy2(int week)
+    {
+        double probabilityOfDelivery;
+            
+        if (week <= 10)
+        {
+            probabilityOfDelivery = _deliveryProbabilityBySupplier1First10WeeksGenerator.Next();
+        }
+        else
+        {
+            probabilityOfDelivery = _deliveryProbabilityBySupplier1After10WeeksGenerator.Next();
+        }
+
+        var decision = _decisionOnDeliveryGenerator.Next();
+                
+        if (decision < probabilityOfDelivery)
+        {
+            _deliveredComponents[0] = 68;
+            _deliveredComponents[1] = 140;
+            _deliveredComponents[2] = 82;
+        }
+        else
+        {
+            _deliveredComponents[0] = 0;
+            _deliveredComponents[1] = 0;
+            _deliveredComponents[2] = 0;
+        }
+    }
+    
+    // Vlastná stratégia 3: Neobjednavame nic, iba akceptujeme kazdy piatok pokuty
+    private void CustomStrategy3(int week)
+    {
+        _deliveredComponents[0] = 0;
+        _deliveredComponents[1] = 0;
+        _deliveredComponents[2] = 0;
     }
 }

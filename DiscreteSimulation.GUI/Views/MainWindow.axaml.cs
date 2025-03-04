@@ -15,7 +15,9 @@ public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
     private readonly WarehouseSimulation _simulation = new();
-    private readonly List<Coordinates> _chartData = new();
+    private readonly List<Coordinates> _replicationsChartData = new();
+    private readonly List<Coordinates> _dailyChartData = new();
+    private readonly List<Coordinates> _cumulativeDailyChartData = new();
     private int _skipFirstNReplications = 0;
     
     public MainWindow()
@@ -25,12 +27,11 @@ public partial class MainWindow : Window
         _viewModel = new MainWindowViewModel();
         DataContext = _viewModel;
         
-        var scatterLine = CostsPlot.Plot.Add.ScatterLine(_chartData, Colors.Red);
-        scatterLine.PathStrategy = new ScottPlot.PathStrategies.CubicSpline();
-        CostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
-
-
+        SetupCharts();
+        
         _simulation.ReplicationEnded += ReplicationEnded;
+        
+        _simulation.NewDailyCosts += NewDailyCosts;
 
         _simulation.SimulationEnded += () =>
         {
@@ -40,6 +41,11 @@ public partial class MainWindow : Window
 
     private void ReplicationEnded()
     {
+        if (_simulation.CurrentMaxReplications == 1)
+        {
+            return;
+        }
+        
         var currentReplication = _simulation.CurrentReplication;
         
         // Berieme iba kazdu (RenderOffset + 1)-tu replikaciu
@@ -64,14 +70,28 @@ public partial class MainWindow : Window
     private async void StartSimulationButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _viewModel.DisableButtonsForSimulationStart();
+
+        if (_viewModel.Replications == 1)
+        {
+            _viewModel.IsSingleReplication = true;
+        }
+        else
+        {
+            _viewModel.IsSingleReplication = false;
+        }
         
-        _chartData.Clear();
+        _replicationsChartData.Clear();
+        _dailyChartData.Clear();
+        _cumulativeDailyChartData.Clear();
+        
         CostsPlot.Plot.Axes.AutoScale();
+        DailyCostsPlot.Plot.Axes.AutoScale();
+        CumulativeDailyCostsPlot.Plot.Axes.AutoScale();
         CostsPlot.Refresh();
         
         _skipFirstNReplications = Convert.ToInt32(_viewModel.Replications * (_viewModel.SkipFirstNReplicationsInPercent / 100.0));
         
-        _simulation.SelectedStrategy = _viewModel.GetSelectedStrategy();
+        _simulation.SelectedStrategy = _viewModel.SelectedStrategy;
         
         await Task.Run(() => _simulation.StartSimulation(_viewModel.Replications));
     }
@@ -79,12 +99,12 @@ public partial class MainWindow : Window
     private void NewReplicationResult(long replication, double costs)
     {
         _viewModel.CurrentReplication = replication.ToString();
-        _viewModel.CurrentCosts = costs.ToString();
+        _viewModel.CurrentCosts = costs.ToString("F2");
     }
     
     private void NewCostValue(long replication, double costs)
     {
-        _chartData.Add(new Coordinates(replication, costs));
+        _replicationsChartData.Add(new Coordinates(replication, costs));
 
         CostsPlot.Plot.Axes.AutoScale();
         CostsPlot.Refresh();
@@ -93,5 +113,45 @@ public partial class MainWindow : Window
     private void StopSimulationButton_OnClick(object? sender, RoutedEventArgs e)
     {
         _simulation.StopSimulation();
+    }
+    
+    private void NewDailyCosts(int day, double dailyCosts, double totalCosts)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            _dailyChartData.Add(new Coordinates(day, dailyCosts));
+            _cumulativeDailyChartData.Add(new Coordinates(day, totalCosts));
+            
+            DailyCostsPlot.Plot.Axes.AutoScale();
+            DailyCostsPlot.Refresh();
+            
+            CumulativeDailyCostsPlot.Plot.Axes.AutoScale();
+            CumulativeDailyCostsPlot.Refresh();
+        });
+    }
+    
+    private void SetupCharts()
+    {
+        var scatterLineReplications = CostsPlot.Plot.Add.ScatterLine(_replicationsChartData, Colors.Red);
+        scatterLineReplications.PathStrategy = new ScottPlot.PathStrategies.CubicSpline();
+        
+        CostsPlot.Plot.Axes.Bottom.Label.Text = "Replication";
+        CostsPlot.Plot.Axes.Left.Label.Text = "Costs";
+        
+        DailyCostsPlot.Plot.Add.ScatterLine(_dailyChartData, Colors.Green);
+        
+        DailyCostsPlot.Plot.Axes.Bottom.Label.Text = "Day";
+        DailyCostsPlot.Plot.Axes.Left.Label.Text = "Daily costs";
+        
+        var scatterLineCumulativeDaily = CumulativeDailyCostsPlot.Plot.Add.ScatterLine(_cumulativeDailyChartData, Colors.Blue);
+        scatterLineCumulativeDaily.PathStrategy = new ScottPlot.PathStrategies.CubicSpline();
+        
+        CumulativeDailyCostsPlot.Plot.Axes.Bottom.Label.Text = "Day";
+        CumulativeDailyCostsPlot.Plot.Axes.Left.Label.Text = "Cumulative daily costs";
+        
+        CostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
+        DailyCostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
+        CumulativeDailyCostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
+
     }
 }

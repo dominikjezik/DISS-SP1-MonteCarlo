@@ -7,21 +7,49 @@ public class EmpiricalProbabilityGenerator
     private readonly List<EmpiricalProbabilityTableItem> _probabilityTable;
 
     private readonly Random[] _randoms;
-    
-    public EmpiricalProbabilityGenerator(bool isDiscrete, List<EmpiricalProbabilityTableItem> probabilityTable, SeedGenerator seedGenerator)
+
+    public EmpiricalProbabilityGenerator(bool isDiscrete, List<EmpiricalProbabilityTableItem> probabilityTable, List<int> seedsForGenerators)
     {
         _isDiscrete = isDiscrete;
         _probabilityTable = probabilityTable;
         
+        if (seedsForGenerators.Count != probabilityTable.Count + 1)
+        {
+            throw new ArgumentException("Number of seeds in list of seeds must be equal to number of items in probability table + 1");
+        }
+        
         _randoms = new Random[probabilityTable.Count + 1];
-        _randoms[0] = new Random(seedGenerator.Next());
+        
+        SetupGenerators(seedsForGenerators);
+    }
+    
+    public EmpiricalProbabilityGenerator(bool isDiscrete, List<EmpiricalProbabilityTableItem> probabilityTable, SeedGenerator seedGenerator)
+    {
+        var listOfSeeds = new List<int>(probabilityTable.Count + 1);
+        
+        for (var i = 0; i < probabilityTable.Count + 1; i++)
+        {
+            listOfSeeds.Add(seedGenerator.Next());
+        }
+        
+        _isDiscrete = isDiscrete;
+        _probabilityTable = probabilityTable;
+        
+        _randoms = new Random[probabilityTable.Count + 1];
+        
+        SetupGenerators(listOfSeeds);
+    }
+
+    private void SetupGenerators(List<int> seedsForGenerators)
+    {
+        _randoms[0] = new Random(seedsForGenerators[0]);
         
         var probabilitySumCheck = 0.0;
 
         for (var i = 0; i < _probabilityTable.Count; i++)
         {
             probabilitySumCheck += _probabilityTable[i].Probability;
-            _randoms[i + 1] = new Random(seedGenerator.Next());
+            _randoms[i + 1] = new Random(seedsForGenerators[i + 1]);
         }
         
         var difference = Math.Abs(probabilitySumCheck - 1.0);

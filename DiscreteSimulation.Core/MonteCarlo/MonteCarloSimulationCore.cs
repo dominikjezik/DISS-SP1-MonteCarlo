@@ -8,6 +8,8 @@ public abstract class MonteCarloSimulationCore
     
     public long CurrentReplication { get; private set; } = 0;
     
+    public long CurrentMaxReplications { get; private set; } = 0;
+    
     protected SeedGenerator SeedGenerator { get; private set; }
 
     public virtual void BeforeSimulation(int? seedForSeedGenerator = null)
@@ -28,6 +30,7 @@ public abstract class MonteCarloSimulationCore
     
     public void StartSimulation(long replications)
     {
+        CurrentMaxReplications = replications;
         IsSimulationRunning = true;
         
         BeforeSimulation();

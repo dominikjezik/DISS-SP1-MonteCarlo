@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace DiscreteSimulation.GUI.ViewModels;
 
@@ -19,137 +20,41 @@ public class MainWindowViewModel : ViewModelBase
     
     public bool IsStopSimulationButtonEnabled => !IsStartSimulationButtonEnabled;
     
-    public bool IsCheckedStrategyA { get; set; } = true;
-
-    private bool _isEnabledStrategyA = true;
-    
-    public bool IsEnabledStrategyA
+    public Dictionary<string, string> StrategiesOptions { get; set; } = new()
     {
-        get => _isEnabledStrategyA;
+        { "A", "Strategy A" },
+        { "B", "Strategy B" },
+        { "C", "Strategy C" },
+        { "D", "Strategy D" },
+        { "Custom1", "Custom Strategy 1" },
+        { "Custom2", "Custom Strategy 2" },
+        { "Custom3", "Custom Strategy 3" }
+    };
+    
+    public string SelectedStrategy { get; set; } = "A";
+    
+    private bool _isEnabledStrategySelector = true;
+
+    public bool IsEnabledStrategySelector
+    {
+        get => _isEnabledStrategySelector;
         set
         {
-            _isEnabledStrategyA = value;
+            _isEnabledStrategySelector = value;
             OnPropertyChanged();
         }
-    }
-
-    public bool IsCheckedStrategyB { get; set; }
-    
-    private bool _isEnabledStrategyB = true;
-
-    public bool IsEnabledStrategyB
-    {
-        get => _isEnabledStrategyB;
-        set
-        {
-            _isEnabledStrategyB = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsCheckedStrategyC { get; set; }
-    
-    private bool _isEnabledStrategyC = true;
-
-    public bool IsEnabledStrategyC
-    {
-        get => _isEnabledStrategyC;
-        set
-        {
-            _isEnabledStrategyC = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsCheckedStrategyD { get; set; }
-    
-    private bool _isEnabledStrategyD = true;
-
-    public bool IsEnabledStrategyD
-    {
-        get => _isEnabledStrategyD;
-        set
-        {
-            _isEnabledStrategyD = value;
-            OnPropertyChanged();
-        }
-    }
-
-    public bool IsCheckedCustomStrategy { get; set; }
-
-    public bool IsEnabledCustomStrategy
-    {
-        get => _isEnabledCustomStrategy;
-        set
-        {
-            _isEnabledCustomStrategy = value;
-            OnPropertyChanged();
-        }
-    }
-    
-    public string GetSelectedStrategy()
-    {
-        if (IsCheckedStrategyA)
-        {
-            return "A";
-        }
-        
-        if (IsCheckedStrategyB)
-        {
-            return "B";
-        }
-        
-        if (IsCheckedStrategyC)
-        {
-            return "C";
-        }
-        
-        if (IsCheckedStrategyD)
-        {
-            return "D";
-        }
-
-        return "Custom";
     }
 
     public void DisableButtonsForSimulationStart()
     {
         IsStartSimulationButtonEnabled = false;
-        
-        if (!IsCheckedStrategyA)
-        {
-            IsEnabledStrategyA = false;
-        }
-        
-        if (!IsCheckedStrategyB)
-        {
-            IsEnabledStrategyB = false;
-        }
-        
-        if (!IsCheckedStrategyC)
-        {
-            IsEnabledStrategyC = false;
-        }
-        
-        if (!IsCheckedStrategyD)
-        {
-            IsEnabledStrategyD = false;
-        }
-        
-        if (!IsCheckedCustomStrategy)
-        {
-            IsEnabledCustomStrategy = false;
-        }
+        IsEnabledStrategySelector = false;
     }
 
     public void EnableButtonsForSimulationEnd()
     {
         IsStartSimulationButtonEnabled = true;
-        IsEnabledStrategyA = true;
-        IsEnabledStrategyB = true;
-        IsEnabledStrategyC = true;
-        IsEnabledStrategyD = true;
-        IsEnabledCustomStrategy = true;
+        IsEnabledStrategySelector = true;
     }
 
     private long _replications = 2_000_000;
@@ -203,13 +108,11 @@ public class MainWindowViewModel : ViewModelBase
         }
     }
     
-    private bool _isEnabledCustomStrategy = true;
-    
-    private string _currentCosts = "?";
+    private string _currentCosts = "? ";
 
     public string CurrentCosts
     {
-        get => $"Náklady = {_currentCosts} €";
+        get => $"{_currentCosts}€";
         set
         {
             _currentCosts = value;
@@ -221,11 +124,26 @@ public class MainWindowViewModel : ViewModelBase
 
     public string CurrentReplication
     {
-        get => $"Replikácia = {_currentReplication}";
+        get => _currentReplication;
         set
         {
             _currentReplication = value;
             OnPropertyChanged();
         }
     }
+
+    private bool _isSingleReplication = false;
+    
+    public bool IsSingleReplication
+    {
+        get => _isSingleReplication;
+        set
+        {
+            _isSingleReplication = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsMultipleReplications));
+        }
+    }
+    
+    public bool IsMultipleReplications => !IsSingleReplication;
 }
