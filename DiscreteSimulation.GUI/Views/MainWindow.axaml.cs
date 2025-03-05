@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
-using DiscreteSimulation.Core;
 using DiscreteSimulation.GUI.ViewModels;
 using ScottPlot;
 using ScottPlot.AutoScalers;
@@ -14,7 +13,6 @@ namespace DiscreteSimulation.GUI.Views;
 public partial class MainWindow : Window
 {
     private readonly MainWindowViewModel _viewModel;
-    private readonly WarehouseSimulation _simulation = new();
     private readonly List<Coordinates> _replicationsChartData = new();
     private readonly List<Coordinates> _dailyChartData = new();
     private readonly List<Coordinates> _cumulativeDailyChartData = new();
@@ -29,11 +27,11 @@ public partial class MainWindow : Window
         
         SetupCharts();
         
-        _simulation.ReplicationEnded += ReplicationEnded;
+        _viewModel.Simulation.ReplicationEnded += ReplicationEnded;
         
-        _simulation.NewDailyCosts += NewDailyCosts;
+        _viewModel.Simulation.NewDailyCosts += NewDailyCosts;
 
-        _simulation.SimulationEnded += () =>
+        _viewModel.Simulation.SimulationEnded += () =>
         {
             Dispatcher.UIThread.Post(() => _viewModel.EnableButtonsForSimulationEnd());
         };
@@ -41,12 +39,12 @@ public partial class MainWindow : Window
 
     private void ReplicationEnded()
     {
-        if (_simulation.CurrentMaxReplications == 1)
+        if (_viewModel.Simulation.CurrentMaxReplications == 1)
         {
             return;
         }
         
-        var currentReplication = _simulation.CurrentReplication;
+        var currentReplication = _viewModel.Simulation.CurrentReplication;
         
         // Berieme iba kazdu (RenderOffset + 1)-tu replikaciu
         if ((currentReplication - _skipFirstNReplications) % (_viewModel.RenderOffset + 1) != 0)
@@ -54,7 +52,7 @@ public partial class MainWindow : Window
             return;
         }
         
-        var currentCosts = _simulation.CurrentCosts;
+        var currentCosts = _viewModel.Simulation.CurrentCosts;
         
         Dispatcher.UIThread.Post(() => NewReplicationResult(currentReplication, currentCosts));
         
@@ -91,9 +89,9 @@ public partial class MainWindow : Window
         
         _skipFirstNReplications = Convert.ToInt32(_viewModel.Replications * (_viewModel.SkipFirstNReplicationsInPercent / 100.0));
         
-        _simulation.SelectedStrategy = _viewModel.SelectedStrategy;
+        _viewModel.Simulation.SelectedStrategy = _viewModel.SelectedStrategy;
         
-        await Task.Run(() => _simulation.StartSimulation(_viewModel.Replications));
+        await Task.Run(() => _viewModel.Simulation.StartSimulation(_viewModel.Replications));
     }
     
     private void NewReplicationResult(long replication, double costs)
@@ -112,7 +110,7 @@ public partial class MainWindow : Window
 
     private void StopSimulationButton_OnClick(object? sender, RoutedEventArgs e)
     {
-        _simulation.StopSimulation();
+        _viewModel.Simulation.StopSimulation();
     }
     
     private void NewDailyCosts(int day, double dailyCosts, double totalCosts)

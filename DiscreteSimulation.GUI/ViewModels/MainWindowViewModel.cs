@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using DiscreteSimulation.Core;
 
 namespace DiscreteSimulation.GUI.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {
+    private readonly WarehouseSimulation _simulation = new();
+    
+    public WarehouseSimulation Simulation => _simulation;
+    
     private bool _isStartSimulationButtonEnabled = true;
 
     public bool IsStartSimulationButtonEnabled
