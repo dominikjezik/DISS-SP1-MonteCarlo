@@ -62,6 +62,11 @@ public class EmpiricalProbabilityGenerator
     
     public double Next()
     {
+        if (_isDiscrete)
+        {
+            throw new InvalidOperationException("This method can be called only for continuous generator");
+        }
+        
         var probabilityForSelectingTableItem = _randoms[0].NextDouble();
 
         var cumulativeProbabilities = 0.0;
@@ -73,6 +78,30 @@ public class EmpiricalProbabilityGenerator
             if (probabilityForSelectingTableItem < cumulativeProbabilities)
             {
                 return NextFromTableItem(i);
+            }
+        }
+        
+        throw new Exception("This exception should never be thrown");
+    }
+
+    public int NextInt()
+    {
+        if (!_isDiscrete)
+        {
+            throw new InvalidOperationException("This method can be called only for discrete generator");
+        }
+        
+        var probabilityForSelectingTableItem = _randoms[0].NextDouble();
+
+        var cumulativeProbabilities = 0.0;
+        
+        for (var i = 0; i < _probabilityTable.Count; i++)
+        {
+            cumulativeProbabilities += _probabilityTable[i].Probability;
+            
+            if (probabilityForSelectingTableItem < cumulativeProbabilities)
+            {
+                return (int)NextFromTableItem(i);
             }
         }
         

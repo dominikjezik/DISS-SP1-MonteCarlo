@@ -17,7 +17,7 @@ for (var i = 0; i < numberOfIterations; i++)
 {
     Console.WriteLine(i);
     
-    var next = empiricalProbabilityGenerator.Next();
+    var next = empiricalProbabilityGenerator.NextInt();
     
     if (next >= 30 && next < 60)
     {
@@ -52,7 +52,7 @@ var empiricalProbabilityGenerator = new EmpiricalProbabilityGenerator(isDiscrete
 ], seedGenerator);
 
 var countResults = new int[5];
-var numberOfIterations = 1_000_000;
+var numberOfIterations = 10_000_000;
 
 for (var i = 0; i < numberOfIterations; i++)
 {

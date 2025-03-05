@@ -159,7 +159,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
 
             var requiredCountOfTlmice = _requiredCountOfTlmiceGenerator.Next();
             var requiredCountOfBrzdoveDosticky = _requiredCountOfBrzdoveDostickyGenerator.Next();
-            var requiredCountOfSvetlomety = _requiredCountOfSvetlometyGenerator.Next();
+            var requiredCountOfSvetlomety = _requiredCountOfSvetlometyGenerator.NextInt();
             
             var penalty = 0.0;
             
@@ -179,7 +179,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
                 availableComponents[1] = 0;
             }
             
-            availableComponents[2] -= Convert.ToInt32(requiredCountOfSvetlomety);
+            availableComponents[2] -= requiredCountOfSvetlomety;
             
             if (availableComponents[2] < 0)
             {
