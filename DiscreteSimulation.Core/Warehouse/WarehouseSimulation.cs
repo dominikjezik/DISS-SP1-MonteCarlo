@@ -1,7 +1,7 @@
 using DiscreteSimulation.Core.Generators;
 using DiscreteSimulation.Core.MonteCarlo;
 
-namespace DiscreteSimulation.Core;
+namespace DiscreteSimulation.Core.Warehouse;
 
 public class WarehouseSimulation : MonteCarloSimulationCore
 {
@@ -19,7 +19,8 @@ public class WarehouseSimulation : MonteCarloSimulationCore
     private EmpiricalProbabilityGenerator _deliveryProbabilityBySupplier2First15WeeksGenerator;
     private EmpiricalProbabilityGenerator _deliveryProbabilityBySupplier2After15WeeksGenerator;
     
-    private ContinuousUniformGenerator _decisionOnDeliveryGenerator;
+    private ContinuousUniformGenerator _decisionOnDeliveryBySupplier1Generator;
+    private ContinuousUniformGenerator _decisionOnDeliveryBySupplier2Generator;
     
     public string SelectedStrategy
     {
@@ -76,6 +77,10 @@ public class WarehouseSimulation : MonteCarloSimulationCore
         {
             _deliverComponentsBySelectedStrategy = CustomStrategy3;
         }
+        else if (SelectedStrategy == "CustomFromFile")
+        {
+            _deliverComponentsBySelectedStrategy = CustomStrategyFromFile;
+        }
         else
         {
             throw new Exception("Unknown strategy");
@@ -120,7 +125,8 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             SeedGenerator
         );
         
-        _decisionOnDeliveryGenerator = new ContinuousUniformGenerator(0, 100, SeedGenerator.Next());
+        _decisionOnDeliveryBySupplier1Generator = new ContinuousUniformGenerator(0, 100, SeedGenerator.Next());
+        _decisionOnDeliveryBySupplier2Generator = new ContinuousUniformGenerator(0, 100, SeedGenerator.Next());
     }
 
     public event Action<int, double, double>? NewDailyCosts;
@@ -231,7 +237,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             probabilityOfDelivery = _deliveryProbabilityBySupplier1After10WeeksGenerator.Next();
         }
 
-        var decision = _decisionOnDeliveryGenerator.Next();
+        var decision = _decisionOnDeliveryBySupplier1Generator.Next();
                 
         if (decision < probabilityOfDelivery)
         {
@@ -261,7 +267,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             probabilityOfDelivery = _deliveryProbabilityBySupplier2After15WeeksGenerator.Next();
         }
 
-        var decision = _decisionOnDeliveryGenerator.Next();
+        var decision = _decisionOnDeliveryBySupplier2Generator.Next();
                 
         if (decision < probabilityOfDelivery)
         {
@@ -318,7 +324,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             probabilityOfDelivery = _deliveryProbabilityBySupplier1After10WeeksGenerator.Next();
         }
 
-        var decision = _decisionOnDeliveryGenerator.Next();
+        var decision = _decisionOnDeliveryBySupplier1Generator.Next();
                 
         if (decision < probabilityOfDelivery)
         {
@@ -349,7 +355,7 @@ public class WarehouseSimulation : MonteCarloSimulationCore
             probabilityOfDelivery = _deliveryProbabilityBySupplier1After10WeeksGenerator.Next();
         }
 
-        var decision = _decisionOnDeliveryGenerator.Next();
+        var decision = _decisionOnDeliveryBySupplier1Generator.Next();
                 
         if (decision < probabilityOfDelivery)
         {
@@ -371,5 +377,60 @@ public class WarehouseSimulation : MonteCarloSimulationCore
         _deliveredComponents[0] = 0;
         _deliveredComponents[1] = 0;
         _deliveredComponents[2] = 0;
+    }
+    
+    public int[,]? CustomStrategyTableFromFile { get; set; }
+    
+    // Vlastná stratégia načítaná zo súboru
+    private void CustomStrategyFromFile(int week)
+    {
+        _deliveredComponents[0] = 0;
+        _deliveredComponents[1] = 0;
+        _deliveredComponents[2] = 0;
+        
+        double probabilityOfDelivery;
+        double decision;
+        
+        if (CustomStrategyTableFromFile[week - 1,0] != 0 || CustomStrategyTableFromFile[week - 1,1] != 0 || CustomStrategyTableFromFile[week - 1,2] != 0)
+        {
+            if (week <= 10)
+            {
+                probabilityOfDelivery = _deliveryProbabilityBySupplier1First10WeeksGenerator.Next();
+            }
+            else
+            {
+                probabilityOfDelivery = _deliveryProbabilityBySupplier1After10WeeksGenerator.Next();
+            }
+        
+            decision = _decisionOnDeliveryBySupplier1Generator.Next();
+
+            if (decision < probabilityOfDelivery)
+            {
+                _deliveredComponents[0] += CustomStrategyTableFromFile[week - 1,0];
+                _deliveredComponents[1] += CustomStrategyTableFromFile[week - 1,1];
+                _deliveredComponents[2] += CustomStrategyTableFromFile[week - 1,2];
+            }
+        }
+        
+        if (CustomStrategyTableFromFile[week - 1,3] != 0 || CustomStrategyTableFromFile[week - 1,4] != 0 || CustomStrategyTableFromFile[week - 1,5] != 0)
+        {
+            if (week <= 15)
+            {
+                probabilityOfDelivery = _deliveryProbabilityBySupplier2First15WeeksGenerator.Next();
+            }
+            else
+            {
+                probabilityOfDelivery = _deliveryProbabilityBySupplier2After15WeeksGenerator.Next();
+            }
+
+            decision = _decisionOnDeliveryBySupplier2Generator.Next();
+        
+            if (decision < probabilityOfDelivery)
+            {
+                _deliveredComponents[0] += CustomStrategyTableFromFile[week - 1,3];
+                _deliveredComponents[1] += CustomStrategyTableFromFile[week - 1,4];
+                _deliveredComponents[2] += CustomStrategyTableFromFile[week - 1,5];
+            }
+        }
     }
 }

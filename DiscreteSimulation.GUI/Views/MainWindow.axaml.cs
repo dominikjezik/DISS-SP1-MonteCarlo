@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using DiscreteSimulation.GUI.ViewModels;
+using MsBox.Avalonia;
 using ScottPlot;
 using ScottPlot.AutoScalers;
 
@@ -35,19 +37,26 @@ public partial class MainWindow : Window
         {
             Dispatcher.UIThread.Post(() => _viewModel.EnableButtonsForSimulationEnd());
         };
+        
+        _viewModel.SelectedCustomFromFileStrategy += async () => await ShowLoadStrategyFromFileDialog();
     }
 
     private void ReplicationEnded()
     {
         if (_viewModel.Simulation.CurrentMaxReplications == 1)
         {
+            var currentCostsForSingleReplication = _viewModel.Simulation.CurrentCosts;
+            Dispatcher.UIThread.Post(() => NewReplicationResult(1, currentCostsForSingleReplication));
             return;
         }
         
         var currentReplication = _viewModel.Simulation.CurrentReplication;
         
-        // Berieme iba kazdu (RenderOffset + 1)-tu replikaciu
-        if ((currentReplication - _skipFirstNReplications) % (_viewModel.RenderOffset + 1) != 0)
+        // V label popiskoch robime refresh bud kazdych 1000 replikacii
+        // alebo podla nastavenia RenderOffset respektive poslednu replikaciu
+        // (ak module nevyslo na 0) pre aktualnost
+        if ((currentReplication % 1000 != 0) && (currentReplication - _skipFirstNReplications) % (_viewModel.RenderOffset + 1) != 0
+            && currentReplication != _viewModel.Simulation.CurrentMaxReplications)
         {
             return;
         }
@@ -55,6 +64,15 @@ public partial class MainWindow : Window
         var currentCosts = _viewModel.Simulation.CurrentCosts;
         
         Dispatcher.UIThread.Post(() => NewReplicationResult(currentReplication, currentCosts));
+        
+        // Berieme iba kazdu (RenderOffset + 1)-tu replikaciu pre vykreslenie
+        // Ale ak sme uz na poslednej replikacii, a modulo nevyslo na 0,
+        // tak sa zobrazi aj tak
+        if ((currentReplication - _skipFirstNReplications) % (_viewModel.RenderOffset + 1) != 0 
+            && currentReplication != _viewModel.Simulation.CurrentMaxReplications)
+        {
+            return;
+        }
         
         // Preskocime prvych niekolko replikacii
         if (currentReplication < _skipFirstNReplications)
@@ -131,7 +149,7 @@ public partial class MainWindow : Window
     private void SetupCharts()
     {
         var scatterLineReplications = CostsPlot.Plot.Add.ScatterLine(_replicationsChartData, Colors.Red);
-        scatterLineReplications.PathStrategy = new ScottPlot.PathStrategies.CubicSpline();
+        scatterLineReplications.PathStrategy = new ScottPlot.PathStrategies.Straight();
         
         CostsPlot.Plot.Axes.Bottom.Label.Text = "Replication";
         CostsPlot.Plot.Axes.Left.Label.Text = "Costs";
@@ -142,7 +160,7 @@ public partial class MainWindow : Window
         DailyCostsPlot.Plot.Axes.Left.Label.Text = "Daily costs";
         
         var scatterLineCumulativeDaily = CumulativeDailyCostsPlot.Plot.Add.ScatterLine(_cumulativeDailyChartData, Colors.Blue);
-        scatterLineCumulativeDaily.PathStrategy = new ScottPlot.PathStrategies.CubicSpline();
+        scatterLineCumulativeDaily.PathStrategy = new ScottPlot.PathStrategies.Straight();
         
         CumulativeDailyCostsPlot.Plot.Axes.Bottom.Label.Text = "Day";
         CumulativeDailyCostsPlot.Plot.Axes.Left.Label.Text = "Cumulative daily costs";
@@ -150,6 +168,36 @@ public partial class MainWindow : Window
         CostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
         DailyCostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
         CumulativeDailyCostsPlot.Plot.Axes.AutoScaler = new FractionalAutoScaler(.005, .015);
+    }
+    
+    private async Task ShowLoadStrategyFromFileDialog()
+    {
+        var fileDialogResult = await StorageProvider.OpenFilePickerAsync(new()
+        {
+            Title = "Vyberte súbor s vlastnou stratégiou",
+            AllowMultiple = false,
+            FileTypeFilter = [ FilePickerFileTypes.TextPlain ]
+        });
+        
+        // Nebol vybrany subor s vlastnou strategiou - reset na strategiu A
+        if (fileDialogResult.Count == 0)
+        {
+            _viewModel.SelectedStrategy = "A";
+            return;
+        }
+        
+        var file = fileDialogResult[0].Path;
 
+        try
+        {
+            _viewModel.LoadCustomStrategyFromFile(file);
+        }
+        catch (Exception e)
+        {
+            var box = MessageBoxManager.GetMessageBoxStandard("Error", "Failed to load custom strategy file.");
+            await box.ShowWindowDialogAsync(this);
+            
+            _viewModel.SelectedStrategy = "A";
+        }
     }
 }

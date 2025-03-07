@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using DiscreteSimulation.Core;
+using DiscreteSimulation.Core.Warehouse;
 
 namespace DiscreteSimulation.GUI.ViewModels;
 
@@ -9,6 +9,8 @@ public class MainWindowViewModel : ViewModelBase
     private readonly WarehouseSimulation _simulation = new();
     
     public WarehouseSimulation Simulation => _simulation;
+    
+    private readonly CustomStrategyLoader _customStrategyLoader = new();
     
     private bool _isStartSimulationButtonEnabled = true;
 
@@ -33,11 +35,27 @@ public class MainWindowViewModel : ViewModelBase
         { "D", "Strategy D" },
         { "Custom1", "Custom Strategy 1" },
         { "Custom2", "Custom Strategy 2" },
-        { "Custom3", "Custom Strategy 3" }
+        { "Custom3", "Custom Strategy 3" },
+        { "CustomFromFile", "Custom Strategy from File" }
     };
     
-    public string SelectedStrategy { get; set; } = "A";
-    
+    private string _selectedStrategy = "A";
+
+    public string SelectedStrategy
+    {
+        get => _selectedStrategy;
+        set
+        {
+            _selectedStrategy = value;
+            OnPropertyChanged();
+
+            if (value == "CustomFromFile")
+            {
+                SelectedCustomFromFileStrategy?.Invoke();
+            }
+        }
+    }
+
     private bool _isEnabledStrategySelector = true;
 
     public bool IsEnabledStrategySelector
@@ -48,6 +66,13 @@ public class MainWindowViewModel : ViewModelBase
             _isEnabledStrategySelector = value;
             OnPropertyChanged();
         }
+    }
+    
+    public event Action? SelectedCustomFromFileStrategy;
+
+    public void LoadCustomStrategyFromFile(Uri pathToFile)
+    {
+        Simulation.CustomStrategyTableFromFile = _customStrategyLoader.LoadStrategyFromFile(pathToFile);
     }
 
     public void DisableButtonsForSimulationStart()
@@ -73,6 +98,11 @@ public class MainWindowViewModel : ViewModelBase
             _replications = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(RenderOffset));
+
+            if (value < RenderPoints)
+            {
+                RenderPoints = value;
+            }
         }
     }
 
@@ -109,7 +139,8 @@ public class MainWindowViewModel : ViewModelBase
         {
             var skipFirst = Math.Floor(Replications * (SkipFirstNReplicationsInPercent / 100.0));
             var renderOffset = (Replications - skipFirst) / RenderPoints;
-            return Convert.ToInt64(Math.Floor(renderOffset)) - 1;
+            var result = Convert.ToInt64(Math.Floor(renderOffset)) - 1;
+            return result >= 0 ? result : 0;
         }
     }
     
