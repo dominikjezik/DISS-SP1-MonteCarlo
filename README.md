@@ -17,8 +17,7 @@ The application was developed as the first semester work on the Discrete Simulat
 
 
 ## 🚀 Video Preview
-...
-
+https://github.com/user-attachments/assets/e40bf3f3-5874-4785-b7c9-17900d135df6
 
 ## 💡 Simulation Scenario
 The simulation models a warehouse operated by a businessman, who stores and delivers car parts for nearby auto repair shops and a car manufacturer. The warehouse deals with three types of parts: shock absorbers, brake pads, and headlights, which are supplied by two suppliers. 
@@ -85,7 +84,7 @@ Aplikácia bola vytvorená ako prvá semestrálna práca v rámci predmetu Diskr
 - 📄 Načítanie vlastných stratégií z textového súboru
 
 ## 🚀 Video Ukážka
-...
+https://github.com/user-attachments/assets/e40bf3f3-5874-4785-b7c9-17900d135df6
 
 ## 💡 Scenár simulácie
 Simulácia modeluje sklad prevádzkovaný podnikateľom, ktorý skladuje a dodáva automobilové súčiastky pre blízke autoservisy a automobilku. Sklad sa zaoberá tromi typmi súčiastok: tlmiče, brzdové doštičky a svetlomety, ktoré sú dodávané dvoma dodávateľmi.
